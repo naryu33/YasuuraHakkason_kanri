@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 </head>
+
 <body>
     <!-- Header Section -->
     <header>
@@ -59,11 +61,33 @@
         <button onclick="closeBorrowForm()">キャンセル</button>
     </div>
 
+    <!-- 貸出中の図書を表示するセクション -->
+    <!-- 貸出図書セクション -->
+    <section id="borrowed-books">
+        <h2>貸出図書一覧</h2>
+        <p id="borrowed-message"></p>
+        <table id="borrowed-table" border="1">
+            <thead>
+                <tr>
+                    <th>画像</th>
+                    <th>タイトル</th>
+                    <th>著者</th>
+                    <th>借りた人</th>
+                    <th>貸出日</th>
+                    <th>返却期限</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="borrowed-table-body"></tbody>
+        </table>
+    </section>
+
+
     <footer>
         <p>YASUULABシェア図書館 © 2024</p>
         <p>お問い合わせ: <a href="mailto:
             yasuulab@itnav.co.jp">
-            yasuulab@itnav.co.jp</a></p>
+                yasuulab@itnav.co.jp</a></p>
     </footer>
 
     <script src="../utils/firebase.js"></script>
@@ -71,63 +95,59 @@
         const db = firebase.firestore();
         let currentBookId = null;
 
-        document.getElementById("search-form").addEventListener("submit", function(event) {
+        // 検索処理
+        document.getElementById("search-form").addEventListener("submit", function (event) {
             event.preventDefault();
             const query = document.getElementById("search-query").value.trim().toLowerCase();
             searchBooks(query);
         });
 
         async function searchBooks(query) {
-            query = query.split(" ");
-            const matchBooks = [];
-            let resultsNum = 0;
             const tbody = document.getElementById('book-table-body');
             tbody.innerHTML = "";
+            query = query.split(" ");
+            let resultsNum = 0;
 
             try {
                 const snapshot = await db.collection('books').get();
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     if (data.author.includes(query) || data.title.includes(query)) {
-                        matchBooks.push({ id: doc.id, ...data });
+                        const row = document.createElement('tr');
+                        const imgCell = document.createElement('td');
+                        const imgViewer = document.createElement("img");
+                        imgViewer.src = `https://ndlsearch.ndl.go.jp/thumbnail/${data.isbn}.jpg`;
+                        imgCell.appendChild(imgViewer);
+                        row.appendChild(imgCell);
+
+                        const titleCell = document.createElement('td');
+                        titleCell.textContent = data.title;
+                        row.appendChild(titleCell);
+
+                        const authorCell = document.createElement('td');
+                        authorCell.textContent = data.author;
+                        row.appendChild(authorCell);
+
+                        const stockCell = document.createElement('td');
+                        stockCell.textContent = data.isStock ? "在庫あり" : "貸出中";
+                        row.appendChild(stockCell);
+
+                        const actionCell = document.createElement('td');
+                        if (data.isStock) {
+                            const borrowButton = document.createElement('button');
+                            borrowButton.textContent = "貸出";
+                            borrowButton.onclick = () => openBorrowForm(doc.id);
+                            actionCell.appendChild(borrowButton);
+                        } else {
+                            const returnButton = document.createElement('button');
+                            returnButton.textContent = "返却";
+                            returnButton.onclick = () => returnBook(doc.id);
+                            actionCell.appendChild(returnButton);
+                        }
+                        row.appendChild(actionCell);
+                        tbody.appendChild(row);
+                        resultsNum++;
                     }
-                });
-
-                matchBooks.forEach(book => {
-                    const row = document.createElement('tr');
-                    const imgCell = document.createElement('td');
-                    const imgViewer = document.createElement("img");
-                    imgViewer.src = `https://ndlsearch.ndl.go.jp/thumbnail/${book.isbn}.jpg`;
-                    imgCell.appendChild(imgViewer);
-                    row.appendChild(imgCell);
-
-                    const titleCell = document.createElement('td');
-                    titleCell.textContent = book.title;
-                    row.appendChild(titleCell);
-
-                    const authorCell = document.createElement('td');
-                    authorCell.textContent = book.author;
-                    row.appendChild(authorCell);
-
-                    const stockCell = document.createElement('td');
-                    stockCell.textContent = book.isStock ? "在庫あり" : "貸出中";
-                    row.appendChild(stockCell);
-
-                    const actionCell = document.createElement('td');
-                    if (book.isStock) {
-                        const borrowButton = document.createElement('button');
-                        borrowButton.textContent = "貸出";
-                        borrowButton.onclick = () => openBorrowForm(book.id);
-                        actionCell.appendChild(borrowButton);
-                    } else {
-                        const returnButton = document.createElement('button');
-                        returnButton.textContent = "返却";
-                        returnButton.onclick = () => returnBook(book.id);
-                        actionCell.appendChild(returnButton);
-                    }
-                    row.appendChild(actionCell);
-                    tbody.appendChild(row);
-                    resultsNum++;
                 });
 
                 document.getElementById("search-message").textContent = resultsNum > 0 ? `${resultsNum}件の結果が見つかりました` : "該当する本が見つかりませんでした";
@@ -137,6 +157,7 @@
             }
         }
 
+        // 貸出フォームの操作
         function openBorrowForm(bookId) {
             currentBookId = bookId;
             document.getElementById("borrow-form").style.display = "block";
@@ -164,6 +185,7 @@
                 alert("貸出が完了しました");
                 closeBorrowForm();
                 searchBooks(document.getElementById("search-query").value);
+                fetchBorrowedBooks();
             } catch (error) {
                 console.error("Error updating book:", error);
                 alert("貸出処理に失敗しました");
@@ -180,11 +202,80 @@
                 });
                 alert("返却が完了しました");
                 searchBooks(document.getElementById("search-query").value);
+                fetchBorrowedBooks();
             } catch (error) {
                 console.error("Error returning book:", error);
                 alert("返却処理に失敗しました");
             }
         }
+
+        // 貸出中の本を取得して表示
+        async function fetchBorrowedBooks() {
+            const borrowedTableBody = document.getElementById('borrowed-table-body');
+            borrowedTableBody.innerHTML = ""; // テーブルをクリア
+            let borrowedCount = 0;
+
+            try {
+                const snapshot = await db.collection('books').where('isStock', '==', false).get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+
+                    // 貸出中の本をテーブルに追加
+                    const row = document.createElement('tr');
+
+                    const imgCell = document.createElement('td');
+                    const imgViewer = document.createElement("img");
+                    imgViewer.src = `https://ndlsearch.ndl.go.jp/thumbnail/${data.isbn}.jpg`;
+                    imgViewer.style.maxWidth = "50px";
+                    imgCell.appendChild(imgViewer);
+                    row.appendChild(imgCell);
+
+                    const titleCell = document.createElement('td');
+                    titleCell.textContent = data.title;
+                    row.appendChild(titleCell);
+
+                    const authorCell = document.createElement('td');
+                    authorCell.textContent = data.author;
+                    row.appendChild(authorCell);
+
+                    const borrowerCell = document.createElement('td');
+                    borrowerCell.textContent = data.borrower || "不明";
+                    row.appendChild(borrowerCell);
+
+                    const borrowDateCell = document.createElement('td');
+                    borrowDateCell.textContent = data.borrowDate || "不明";
+                    row.appendChild(borrowDateCell);
+
+                    const returnDateCell = document.createElement('td');
+                    returnDateCell.textContent = data.returnDate || "不明";
+                    row.appendChild(returnDateCell);
+
+                    const actionCell = document.createElement('td');
+                    const returnButton = document.createElement('button');
+                    returnButton.textContent = "返却";
+                    returnButton.className = "return-btn";
+                    returnButton.onclick = () => returnBook(doc.id);
+                    actionCell.appendChild(returnButton);
+                    row.appendChild(actionCell);
+
+                    borrowedTableBody.appendChild(row);
+                    borrowedCount++;
+                });
+
+                const borrowedMessage = document.getElementById('borrowed-message');
+                borrowedMessage.textContent = borrowedCount > 0 ? `現在貸出中の本は ${borrowedCount} 件です。` : "貸出中の本はありません。";
+            } catch (error) {
+                console.error("Error fetching borrowed books:", error);
+                document.getElementById('borrowed-message').textContent = "データ取得中にエラーが発生しました。";
+            }
+        }
+
+        // ページロード時に貸出図書を表示
+        window.onload = function () {
+            fetchBorrowedBooks();
+        };
+
     </script>
 </body>
+
 </html>
