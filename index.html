@@ -55,7 +55,7 @@
     <script>
         const db = firebase.firestore();
 
-        // おすすめの本を取得して表示
+        // おすすめの本を取得してボックスで表示
         async function fetchRecommendedBooks() {
             const list = document.getElementById('recommended-list');
             list.innerHTML = ""; // 初期化
@@ -64,6 +64,8 @@
                 const snapshot = await db.collection('books').where('isRecommended', '==', true).get();
                 snapshot.forEach(doc => {
                     const data = doc.data();
+
+                    // ボックス要素を作成
                     const bookDiv = document.createElement('div');
                     bookDiv.className = 'recommended-book';
 
@@ -71,7 +73,6 @@
                     const img = document.createElement('img');
                     img.src = `https://ndlsearch.ndl.go.jp/thumbnail/${data.isbn}.jpg`;
                     img.alt = `${data.title}の表紙`;
-                    img.className = 'book-cover';
 
                     // タイトルと著者名
                     const bookInfo = document.createElement('div');
@@ -81,7 +82,7 @@
                 <p>${data.author}</p>
             `;
 
-                    // 要素を組み合わせる
+                    // ボックスに要素を追加
                     bookDiv.appendChild(img);
                     bookDiv.appendChild(bookInfo);
                     list.appendChild(bookDiv);
