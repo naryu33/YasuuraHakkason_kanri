@@ -1,22 +1,18 @@
-/* 共通のスタイル */
-.book-carousel {
+#recommended-books {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+#recommended-list {
     display: flex;
     gap: 20px;
-    overflow-x: auto; /* 横スクロールを可能にする */
-    padding: 10px;
+    flex-wrap: wrap;
 }
 
-.book {
-    flex: 0 0 auto; /* 横並びにする */
-    width: 100px;
-    text-align: center;
-}
 
-.book img {
-    width: 100%;
-    height: auto;
-    border-radius: 5px;
-}
+
 
 /* スマホ対応 */
 @media (max-width: 768px) {
