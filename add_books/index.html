@@ -51,8 +51,79 @@
                 <label for="author">著者:</label>
                 <input type="text" id="author" name="author" required><br><br>
 
-                <label for="author">説明:</label>
-                <textarea type="text" id="description" name="description" required></textarea><br><br>
+                <label for="description">説明:</label>
+                <textarea id="description" name="description" required></textarea><br><br>
+
+                <label for="genre">ジャンルコード（cコード下二桁）:</label>
+                <select id="genre" name="genre" required>
+                    <option value="1">00 総記</option>
+                    <option value="2">01 百科事典</option>
+                    <option value="3">02 年鑑・雑誌</option>
+                    <option value="4">04 情報科学</option>
+                    <option value="5">10 哲学</option>
+                    <option value="6">11 心理学</option>
+                    <option value="7">12 倫理学</option>
+                    <option value="8">14 宗教</option>
+                    <option value="9">15 仏教</option>
+                    <option value="10">16 キリスト教</option>
+                    <option value="11">20 歴史総記</option>
+                    <option value="12">21 日本歴史</option>
+                    <option value="13">22 外国歴史</option>
+                    <option value="14">23 伝記</option>
+                    <option value="15">25 地理</option>
+                    <option value="16">26 旅行</option>
+                    <option value="17">30 社会科学総記</option>
+                    <option value="18">31 政治</option>
+                    <option value="19">32 法律</option>
+                    <option value="20">33 経済・財政・統計</option>
+                    <option value="21">34 経営</option>
+                    <option value="22">36 社会</option>
+                    <option value="23">37 教育</option>
+                    <option value="24">39 民族・風習</option>
+                    <option value="25">40 自然科学総記</option>
+                    <option value="26">41 数学</option>
+                    <option value="27">42 物理学</option>
+                    <option value="28">43 化学</option>
+                    <option value="29">44 天文・地学</option>
+                    <option value="30">45 生物学</option>
+                    <option value="31">47 医学・歯学・薬学</option>
+                    <option value="32">50 工学・工学総記</option>
+                    <option value="33">51 土木</option>
+                    <option value="34">52 建築</option>
+                    <option value="35">53 機械</option>
+                    <option value="36">54 電気</option>
+                    <option value="37">55 電子通信</option>
+                    <option value="38">56 海事</option>
+                    <option value="39">57 採鉱・治金</option>
+                    <option value="40">58 その他の工学</option>
+                    <option value="41">60 産業総記</option>
+                    <option value="42">61 農林業</option>
+                    <option value="43">62 水産業</option>
+                    <option value="44">63 商業</option>
+                    <option value="45">65 交通・通信</option>
+                    <option value="46">70 芸術総記</option>
+                    <option value="47">71 絵画・彫刻</option>
+                    <option value="48">72 写真・工芸</option>
+                    <option value="49">73 音楽・舞踊</option>
+                    <option value="50">74 演劇・映画</option>
+                    <option value="51">75 体育・スポーツ</option>
+                    <option value="52">76 諸芸・娯楽</option>
+                    <option value="53">77 家事</option>
+                    <option value="54">79 コミック・劇画</option>
+                    <option value="55">80 語学総記</option>
+                    <option value="56">81 日本語</option>
+                    <option value="57">82 英米語</option>
+                    <option value="58">84 ドイツ語</option>
+                    <option value="59">85 フランス語</option>
+                    <option value="60">87 各国語</option>
+                    <option value="61">90 文学総記</option>
+                    <option value="62">91 日本文学総記</option>
+                    <option value="63">92 日本文学詩歌</option>
+                    <option value="64">93 日本文学、小説・物語</option>
+                    <option value="65">95 日本文学、評論、随筆、その他</option>
+                    <option value="66">97 海外文学小説</option>
+                    <option value="67">98 海外文学、その他</option>
+                </select><br><br>
 
                 <label for="stock">在庫</label>
                 <input type="checkbox" id="stock" name="stock">
@@ -151,7 +222,6 @@
             }
         }
 
-
         // フォーム送信時にFirestoreに登録
         document.getElementById('book-form').addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -160,7 +230,8 @@
             const title = document.getElementById('title').value;
             const author = document.getElementById('author').value;
             const description = document.getElementById('description').value;
-            const isStock = document.getElementById('stock').value;
+            const genre = document.getElementById('genre').value;
+            const isStock = document.getElementById('stock').checked;
 
             try {
                 await db.collection('books').add({
@@ -168,6 +239,7 @@
                     title: title,
                     author: author,
                     description: description,
+                    genre: genre,
                     isStock: isStock
                 });
 
